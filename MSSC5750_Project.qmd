@@ -188,7 +188,9 @@ shp <- shapviz(explainer)
 sv_importance(shp)
 
 plot(explainer, plot_phi0 = FALSE, index_x_explain = 1)
-####
+#### 
+
+###
 shapObj <-shapviz(explainer)
 sv_importance(shapObj, kind="beeswarm", show_numbers = TRUE, max_display=15)
 
