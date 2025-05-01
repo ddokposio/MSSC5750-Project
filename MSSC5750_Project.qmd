@@ -194,7 +194,48 @@ sv_importance(shapObj, kind="beeswarm", show_numbers = TRUE, max_display=15)
 
 ```
 
+#LDA Preliminaries
 
+# LDA
+library(tidyverse)
+library(MASS)
+bankr<-data.frame(loan_data$person_age,loan_data$person_income,loan_data$person_emp_exp,loan_data$loan_amnt,
+                  loan_data$loan_int_rate,loan_data$loan_percent_income,loan_data$cb_person_cred_hist_length,
+                  loan_data$credit_score,loan_data$previous_loan_defaults_on_file)
+
+head(bankr)
+
+
+# Checking for multivariate normality
+
+library(MVN)
+library(tidyverse)
+
+previous_default<-bankr%>%
+  filter(loan_data.previous_loan_defaults_on_file=="Yes")
+
+previous_default
+
+defaulterscheck<-mvn(previous_default[,1:8],mvnTest = "mardia")$multivariateNormality
+print(defaulterscheck)
+
+no_default<-bankr%>%
+  filter(loan_data.previous_loan_defaults_on_file =="No")
+
+non_defaultcheck<-mvn(no_default[,1:8],mvnTest = "mardia")$multivariateNormality
+
+print(non_defaultcheck)
+
+pca_bank<-prcomp(bankr[,1:8],scale. = TRUE)
+summary(pca_bank)
+
+pca_bank
+
+
+lda2<-lda(loan_data.previous_loan_defaults_on_file~loan_data.person_age + loan_data.person_income+
+            loan_data.person_emp_exp +loan_data.loan_amnt,data =bankr)
+
+lda2
 
 
 
