@@ -237,6 +237,33 @@ lda2<-lda(loan_data.previous_loan_defaults_on_file~loan_data.person_age + loan_d
 
 lda2
 
+# LDA3 :Trying to get a prediction summary and accuracy report going
+#LDA-Predict groups
+lda3<-lda(loan_data.previous_loan_defaults_on_file~loan_data.person_age + loan_data.person_income+
+            loan_data.person_emp_exp +loan_data.loan_amnt,prior=c(0.7,0.3),data =bankr)
+
+lda3.results<-bankr%>%
+  mutate(classify.loan_data.previous_loan_defaults_on_file=predict(lda3)$class)
+
+lda3.results
+summary(lda3.results)
+lda3$scaling
+
+zbar1 <- sum(lda3$scaling*lda3$means[1,])
+zbar1
+
+zbar2<- sum(lda3$scaling*lda3$means[2,])
+
+zbar2
+
+cutoff<-0.5*(zbar1+zbar2)
+
+cutoff
+
+#checking classification results
+with(lda3.results,table(loan_data.previous_loan_defaults_on_file,classify.loan_data.previous_loan_defaults_on_file))
+
+pairs(bankr[,1:8],main="Pairs plot of Numerical data for loan default")
 
 
 
