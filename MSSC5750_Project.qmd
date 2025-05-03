@@ -195,6 +195,155 @@ sv_importance(shapObj, kind="beeswarm", show_numbers = TRUE, max_display=15)
 ```
 
 
+### Finalized LDA code
+
+library(tidyverse)
+library(MASS)
+bankr<-data.frame(loan_data$person_age,loan_data$person_income,loan_data$person_emp_exp,loan_data$loan_amnt,
+                  loan_data$loan_int_rate,loan_data$loan_percent_income,loan_data$cb_person_cred_hist_length,
+                  loan_data$credit_score,loan_data$previous_loan_defaults_on_file)
+
+head(bankr)
+
+
+
+lda_desc<-lda(loan_data$previous_loan_defaults_on_file~loan_data$person_age+
+                loan_data$person_income + loan_data$person_emp_exp+loan_data$loan_amnt +
+                loan_data$loan_int_rate+ loan_data$loan_percent_income+loan_data$cb_person_cred_hist_length+
+                loan_data$credit_score,data=bankr )
+
+
+lda_desc
+
+a<-lda_desc$scaling
+a
+
+
+library(MVN)
+library(tidyverse)
+
+previous_default<-bankr%>%
+  filter(loan_data.previous_loan_defaults_on_file=="Yes")%>%
+  select(-loan_data.previous_loan_defaults_on_file)
+  s1<-cov(previous_default)
+  
+  s1
+  
+  
+
+previous_default
+# Checking for multivariate normality
+defaulterscheck<-mvn(previous_default[,1:8],mvnTest = "mardia")$multivariateNormality
+print(defaulterscheck)
+
+#separate groups into two and compute sample covariance matrix
+no_default<-bankr%>%
+  filter(loan_data.previous_loan_defaults_on_file =="No")%>%
+  select(-loan_data.previous_loan_defaults_on_file)
+s2<-cov(no_default)
+s2
+
+# pooled sample covariance matrix  is :
+
+n1<-nrow(previous_default)
+
+n2<-nrow(no_default)
+
+Spl<-1/(n1+n2-2)*((n1-1)*s1 +(n2-1)*s2)
+
+Spl
+
+# manually calculating the coefficients of the standardized discriminant function
+
+a.star<-sqrt(diag(Spl))*a
+
+a.star
+# a.star ranks the independependent variables in the order of discriminative capacity
+# i.e which variables best separate the groups: load_default on file vs no history of default
+
+# 1 age
+#2. income
+#3. employment experience
+#4. loan amount
+#5. loan interest rate
+# 6. loan percent of income (i.e debt-to-income ratio)
+#7.  length of credit history
+# 8. Credit score
+
+library(tidyverse)
+ggplot(bankr,aes(x=loan_data$person_age,y=loan_data$loan_percent_income,
+                 color=factor(loan_data$previous_loan_defaults_on_file)))+
+  geom_point()+ labs(xlab="Age",ylab = "debt-to-incomes")+
+  scale_color_discrete(name="loan_data$previous_loan_defaults_on_file")
+
+
+
+non_defaultcheck<-mvn(no_default[,1:8],mvnTest = "mardia")$multivariateNormality
+
+print(non_defaultcheck)
+
+pca_bank<-prcomp(bankr[,1:8],scale. = TRUE)
+summary(pca_bank)
+
+pca_bank # pca to confirm the variability in data set and ranking of variables 
+           # in discrimination  b/w 2 groups
+
+
+lda2<-lda(loan_data.previous_loan_defaults_on_file~loan_data.person_age + loan_data.person_income+
+            loan_data.person_emp_exp +loan_data.loan_amnt,data =bankr)
+
+lda2
+
+
+library(MASS)
+library(tidyverse)
+library(Hotelling)
+
+loans.test<-hotelling.test(loan_data$person_age+
+    loan_data$person_income + loan_data$person_emp_exp+loan_data$loan_amnt +
+    loan_data$loan_int_rate+ loan_data$loan_percent_income+loan_data$cb_person_cred_hist_length+
+    loan_data$credit_score~factor(loan_data$previous_loan_defaults_on_file),data=bankr )
+
+loans.test
+
+#LDA-Predict groups-taking a predictive view
+
+lda3<-lda(loan_data$previous_loan_defaults_on_file~loan_data$person_age+
+            loan_data$person_income + loan_data$person_emp_exp+loan_data$loan_amnt +
+            loan_data$loan_int_rate+ loan_data$loan_percent_income+loan_data$cb_person_cred_hist_length+
+            loan_data$credit_score,prior=c(0.5,0.5),data=bankr )
+lda3.results<-bankr%>%
+  mutate(classify.loan_data.previous_loan_defaults_on_file=predict(lda3)$class)
+
+lda3.results
+
+lda3$scaling
+
+zbar1 <- sum(lda3$scaling*lda3$means[1,])
+zbar1
+
+zbar2<- sum(lda3$scaling*lda3$means[2,])
+
+zbar2
+
+cutoff<-0.5*(zbar1+zbar2)
+
+cutoff
+
+#checking classification results
+with(lda3.results,table(loan_data.previous_loan_defaults_on_file,classify.loan_data.previous_loan_defaults_on_file))
+
+
+#Classification Analysis Result
+
+# overall classification  (13,508 + 14793)/45,000 : 63% Correct classification
+
+# No default :13508/(13,508+8,634)
+
+# Previous default : 14,793/(14,793+8,065)
+
+pairs(bankr[,1:8])
+
 
 
 
